@@ -1,8 +1,8 @@
-import LandingPage from "./pages/Home/LandingPage.jsx"
+import AppRouter from "./router/AppRouter";
 
 const App = () => {
   return (
-    <LandingPage/>
+    <AppRouter/>
   )
 }
 

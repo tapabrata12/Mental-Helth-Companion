@@ -28,8 +28,8 @@ const LandingPage = () => {
             </h1>
 
             <p className="text-lg text-gray-300 max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Compassionate care and innovative solutions for a brighter future.
-              Discover the path to understanding your own potential.
+              You’re not alone. We’re here to listen. <br />
+              Support begins with a single conversation.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
