@@ -11,10 +11,15 @@ from src.db.mongodb import close_mongo_connection, connect_to_mongo  # Import as
 
 @asynccontextmanager  # Mark function as FastAPI lifespan context manager
 async def lifespan(_: FastAPI) -> AsyncGenerator[None, None]:  # Define async startup/shutdown lifecycle function
-    await connect_to_mongo()  # Connect to MongoDB at application startup
-    print("MongoDB connected ✅")  # Log startup success for quick local visibility
+
     try:  # Start protected runtime block
+        await connect_to_mongo()  # Connect to MongoDB at application startup
+        print("MongoDB connected ✅")  # Log startup success for quick local visibility
         yield  # Hand control to FastAPI while app serves requests
+
+    except Exception as e:
+        print(e) # Prints for any kind of unwanted problems
+
     finally:  # Ensure cleanup always runs even if app crashes
         await close_mongo_connection()  # Close MongoDB client on shutdown
         print("MongoDB disconnected ✅")  # Log shutdown success for local observability

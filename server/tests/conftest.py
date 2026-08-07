@@ -9,3 +9,5 @@ os.environ.setdefault("JWT_SECRET", "test-secret-with-at-least-32-characters")  
 os.environ.setdefault("JWT_ALGORITHM", "HS256")  # Provide the default JWT signing algorithm for token tests.
 os.environ.setdefault("ACCESS_TOKEN_EXPIRE_MINUTES", "15")  # Provide the access-token lifetime expected by settings.
 os.environ.setdefault("REFRESH_TOKEN_EXPIRE_DAYS", "7")  # Provide the refresh-token lifetime expected by settings.
+os.environ.setdefault("CHROMA_COLLECTION_NAME", "mindbridge_test_knowledge")  # Provide a safe test-only ChromaDB collection name.
+os.environ.setdefault("CHROMA_DIR", "./test_chroma_db")  # Provide a safe local test-only ChromaDB storage folder.

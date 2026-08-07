@@ -1,5 +1,7 @@
 # File: server/src/services/assessment_service.py
 from fastapi import HTTPException,status
+from src.core.config import settings
+from src.db import mongodb
 from src.schemas.assessment import CrisisResource,PHQ9CrisisSupport,PHQ9Severity,PHQ9AssessmentHistoryItem,PHQ9AssessmentRequest,PHQ9AssessmentResult,PHQ9AssessmentResponse,PHQ9AssessmentState
 from src.models.assessment import create_phq9_assessment_document
 from typing import Tuple,List
@@ -108,8 +110,7 @@ This part is where we try to save every field about PHQ-9 assessment into MONGOD
 """
 
 async def run_phq9_assessment_and_save(user_id:str,request:PHQ9AssessmentRequest)-> PHQ9AssessmentResponse:
-    from src.core.config import settings
-    from src.db import mongodb
+
 
     if not isinstance(user_id,str) or not user_id.strip():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User id is invalid or empty")
