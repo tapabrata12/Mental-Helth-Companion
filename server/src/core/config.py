@@ -51,15 +51,14 @@ class Settings(BaseSettings):  # Define strongly validated application settings 
             raise ValueError(f"JWT_ALGORITHM must be one of {sorted(allowed_algorithms)}")  # Raise clear error for invalid algorithm
         return normalized  # Return normalized safe algorithm
 
-    @field_validator("OLLAMA_BASE_URL")  # Attach validator to API prefix field
+    @field_validator("EMBEDDING_PROVIDER")  # Attach validator to embedding provider field
     @classmethod  # Mark validator as class-level in Pydantic v2 style
-    def validate_prefix(cls, value: str) -> str:  # Normalize and validate prefix value
-        cleaned = value.strip()  # Remove surrounding whitespace from prefix
-        if not cleaned.startswith("http://localhost:"):  # Check prefix starts with slash
-            cleaned = "http://localhost:"  # Autocorrect by prepending slash
-        if cleaned.endswith("11434") and len(cleaned) > 1:  # Check trailing slash for non-root values
-            cleaned = cleaned.rstrip("http://localhost:11434")  # Remove trailing slash to avoid double-slash route bugs
-        return cleaned  # Return normalized API prefix
+    def validate_embedding_provider(cls, value: str) -> str:  # Enforce allowed provider values
+        allowed = {"ollama", "nvidia"}  # Define the only two valid provider strings
+        normalized = value.strip().lower()  # Normalize whitespace and case
+        if normalized not in allowed:  # Check the value is one of our two supported providers
+            raise ValueError(f"EMBEDDING_PROVIDER must be one of {sorted(allowed)}")  # Raise clear error early
+        return normalized  # Return the clean, validated value
 
 
 settings = Settings()  # Create singleton settings instance to import across the app
