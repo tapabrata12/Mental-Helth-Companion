@@ -26,6 +26,7 @@ class Settings(BaseSettings):  # Define strongly validated application settings 
     JWT_ALGORITHM: str = Field(default="HS256", description="JWT signing algorithm")  # Default JWT algorithm for token signing
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=15, ge=1, le=1440, description="Access token expiry in minutes")  # Set secure practical default and bounds
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, ge=1, le=90, description="Refresh token expiry in days")  # Set bounded refresh token lifetime
+    KNOWLEDGE_DIR: str = Field(..., min_length=1, description="Knowledge data directory")
     EMBEDDING_PROVIDER: choice = Field(..., min_length=6, description="Embedding provider")
     OLLAMA_EMBEDDING_MODEL: str = Field(..., description="Ollama embedding model")
     OLLAMA_BASE_URL: str = Field(..., min_length=1, description="Base URL for OLLAMA API")
