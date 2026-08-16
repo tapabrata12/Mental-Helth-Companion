@@ -72,7 +72,7 @@ async def ingest_folder(data_path: str = settings.KNOWLEDGE_DIR) -> None:
     collection.add(
         documents=texts,
         embeddings=vectors,
-        metadata=metadata,
+        metadatas=metadata,
         ids=ids,
     )
 

@@ -2,12 +2,12 @@ from pathlib import Path
 from src.core.config import settings
 import chromadb
 from chromadb.config import Settings
-CHROMA_DIR = Path(settings.CHROMA_DIR)
+CHROMA_DIR = Path(__file__).resolve().parents[2] / settings.CHROMA_DIR
+print(CHROMA_DIR)
 COLLECTION_NAME = settings.CHROMA_COLLECTION_NAME
 
 _client = None
 _collection = None
-
 
 def get_chroma_client():
     global _client
