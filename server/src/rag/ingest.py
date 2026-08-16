@@ -1,11 +1,11 @@
 # server/src/rag/ingest.py
 
 from pathlib import Path
-from src.core.config import settings
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_classic.text_splitter import RecursiveCharacterTextSplitter
 from src.rag.embedder import embed_texts
 from src.rag.chroma_client import get_knowledge_collection
+from src.core.config import settings
 
 
 def process_pdf_pages(pages: list, source_name: str) -> list[dict]:
@@ -58,13 +58,12 @@ async def ingest_folder(data_path: str = settings.KNOWLEDGE_DIR) -> None:
     ]
 
     # Metadata only — text itself goes in `documents`, not here
-    metadata = [
-        {
-            "source_document": record["source_document"],
-            "page": record["page"],
-            "chunk_index": record["chunk_index"],
-        }
-        for record in all_chunk_records
+    metadata = [{
+                "source_document": record["source_document"],
+                "page": record["page"],
+                "chunk_index": record["chunk_index"],
+                "active_embedding_provider": settings.EMBEDDING_PROVIDER
+        } for record in all_chunk_records
     ]
 
     collection = get_knowledge_collection()
