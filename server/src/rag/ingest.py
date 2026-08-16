@@ -8,6 +8,8 @@ from src.rag.chroma_client import get_knowledge_collection
 from src.core.config import settings
 
 
+
+
 def process_pdf_pages(pages: list, source_name: str) -> list[dict]:
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
     chunk_records = []
@@ -45,34 +47,36 @@ async def ingest_folder(data_path: str = settings.KNOWLEDGE_DIR) -> None:
     if not all_chunk_records:
         raise ValueError(f"No chunks were produced from folder: {p}")
 
-    # Extract just the text for batch embedding
-    texts = [record["text"] for record in all_chunk_records]
-
-    # One batch call — not looped
-    vectors = await embed_texts(texts)
-
-    # Predictable IDs, safe for re-ingestion (upsert instead of duplicate)
-    ids = [
-        f"{record['source_document']}_chunk_{record['chunk_index']}"
-        for record in all_chunk_records
-    ]
-
-    # Metadata only — text itself goes in `documents`, not here
-    metadata = [{
-                "source_document": record["source_document"],
-                "page": record["page"],
-                "chunk_index": record["chunk_index"],
-                "active_embedding_provider": settings.EMBEDDING_PROVIDER
-        } for record in all_chunk_records
-    ]
-
-    collection = get_knowledge_collection()
-
-    collection.add(
-        documents=texts,
-        embeddings=vectors,
-        metadatas=metadata,
-        ids=ids,
-    )
-
-    print(f"Ingested {len(texts)} chunks from {len(pdf_files)} file(s).")
+    # Keep batch size well under ChromaDB limit (5461) and within API provider payload limits
+    BATCH_SIZE = 500
+    for i in range(0, len(all_chunk_records), BATCH_SIZE):
+        # Extract that that batch size equivalent records
+        batch_records = all_chunk_records[i:i+BATCH_SIZE]
+        # Extract the only text part of that batch
+        batch_texts = [r["text"] for r in batch_records]
+        batch_vectors = await embed_texts(batch_texts)
+        # Extract the IDs for that batch
+        batch_ids = [
+            f"{r['source_document']}_chunk_{r['chunk_index']}"
+            for r in batch_records
+        ]
+        # Extract the metadata for that batch
+        batch_metadata = [
+            {
+                "source_document": r["source_document"],
+                "page": r["page"],
+                "chunk_index": r["chunk_index"],
+                "active_embedding_provider": settings.EMBEDDING_PROVIDER,
+            }
+            for r in batch_records
+        ]
+        collection = get_knowledge_collection()
+        total_chunks = len(all_chunk_records)
+        # Use upsert to allow idempotent re-running of ingestion tests
+        collection.upsert(
+            documents=batch_texts,
+            embeddings=batch_vectors,
+            metadatas=batch_metadata,
+            ids=batch_ids,
+        )
+    print(f"Successfully ingested {total_chunks} chunks from {len(pdf_files)} file(s).")
