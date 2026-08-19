@@ -13,6 +13,12 @@ PHQ9Severity = Literal["minimal", "mild", "moderate", "moderately_severe", "seve
 This part is where we make the crisis support part where we define the crisis center info
 #####################################################################################################
 """
+class CrisisDetectionResult(BaseModel):
+    model_config = ConfigDict(extra="forbid",str_strip_whitespace=True)  # Reject unknown fields and normalize strings for API safety
+    crisis_detected: bool = Field(..., min_length=1, description="Phone number or emergency contact instruction")  # Store the phone number or contact instruction
+    matched_phrases: list[str] = Field([], min_length=1, description="Region where this crisis resource applies")  # Store the region so the frontend can label resources clearly
+
+
 class CrisisResource(BaseModel):  # Define one crisis-support contact/resource returned by safety-aware responses
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)  # Reject unknown fields and normalize strings for API safety
     name: str = Field(..., min_length=1, description="Crisis support resource name")  # Store the public name of the helpline or emergency resource
