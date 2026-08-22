@@ -14,10 +14,9 @@ This part is where we make the crisis support part where we define the crisis ce
 #####################################################################################################
 """
 class CrisisDetectionResult(BaseModel):
-    model_config = ConfigDict(extra="forbid",str_strip_whitespace=True)  # Reject unknown fields and normalize strings for API safety
-    crisis_detected: bool = Field(..., min_length=1, description="Phone number or emergency contact instruction")  # Store the phone number or contact instruction
-    matched_phrases: list[str] = Field([], min_length=1, description="Region where this crisis resource applies")  # Store the region so the frontend can label resources clearly
-
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    crisis_detected: bool = Field(..., description="Whether any crisis phrase was found in the text")
+    matched_phrases: list[str] = Field(default_factory=list, description="Phrases from the crisis list found in the text")
 
 class CrisisResource(BaseModel):  # Define one crisis-support contact/resource returned by safety-aware responses
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)  # Reject unknown fields and normalize strings for API safety

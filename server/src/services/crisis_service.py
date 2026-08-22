@@ -1,19 +1,14 @@
 from src.schemas.assessment import CrisisDetectionResult
-def check_for_crisis(text: str)->CrisisDetectionResult:
-    text_list: list = text.split()
-    for item1 in text_list:
-        for item2 in actual_phases_list:
-            if item1 == item2:
-                continue
-            else:
-                text_list.remove(item1)
+from src.core.crisis_phrases import CRISIS_PHRASES
 
-    if len(text_list) > 0:
-        return CrisisDetectionResult(
-            crisis_detected=True,
-            matched_phrases=text_list
-        )
-    return CrisisDetectionResult(
-        crisis_detected=False,
-        matched_phrases=text_list
-    )
+def check_for_crisis(text: str)-> CrisisDetectionResult:
+    text_lower = text.lower()
+    matched: list[str] = []
+
+    for i in CRISIS_PHRASES:
+        if i.lower() in text_lower:
+            matched.append(i)
+    if matched:
+        return CrisisDetectionResult(crisis_detected=True, matched_phrases=matched)
+
+    return CrisisDetectionResult(crisis_detected=False, matched_phrases=matched)
