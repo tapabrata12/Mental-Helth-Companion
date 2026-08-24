@@ -8,7 +8,7 @@ from src.rag.chroma_client import get_knowledge_collection
 from src.core.config import settings
 
 
-
+# print(Path(__file__).resolve().parents[2] / settings.KNOWLEDGE_DIR)
 
 def process_pdf_pages(pages: list, source_name: str) -> list[dict]:
     splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=150)
@@ -28,7 +28,10 @@ def process_pdf_pages(pages: list, source_name: str) -> list[dict]:
 
     return chunk_records
 
-
+#####################################################################################################
+#                                   Main Function to execute
+# Signature: Path,                                                              Return Value: None
+#####################################################################################################
 async def ingest_folder(data_path: str = settings.KNOWLEDGE_DIR) -> None:
     p = Path(__file__).resolve().parents[2] / data_path
     pdf_files = list(p.glob("*.pdf"))

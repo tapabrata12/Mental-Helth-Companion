@@ -3,7 +3,7 @@ from src.core.config import settings
 import chromadb
 from chromadb.config import Settings
 CHROMA_DIR = Path(__file__).resolve().parents[2] / settings.CHROMA_DIR
-print(CHROMA_DIR)
+# print(CHROMA_DIR)
 COLLECTION_NAME = settings.CHROMA_COLLECTION_NAME
 
 _client = None
