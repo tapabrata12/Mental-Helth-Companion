@@ -54,3 +54,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.uv-cache
+.idea
+.uv-python

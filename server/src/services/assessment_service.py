@@ -2,8 +2,9 @@
 from fastapi import HTTPException,status
 from src.core.config import settings
 from src.db import mongodb
-from src.schemas.assessment import CrisisResource,PHQ9CrisisSupport,PHQ9Severity,PHQ9AssessmentHistoryItem,PHQ9AssessmentRequest,PHQ9AssessmentResult,PHQ9AssessmentResponse,PHQ9AssessmentState
+from src.schemas.assessment import PHQ9Severity,PHQ9AssessmentHistoryItem,PHQ9AssessmentRequest,PHQ9AssessmentResult,PHQ9AssessmentResponse,PHQ9AssessmentState
 from src.models.assessment import create_phq9_assessment_document
+from src.services.crisis_service import build_crisis_support
 from typing import Tuple,List
 from datetime import datetime
 
@@ -57,26 +58,14 @@ def _build_recommendation_message(severity:PHQ9Severity, crisis_detection_flag:b
         return f"Your PHQ-9 result falls in the {severity.replace('_', ' ')} range. Please schedule a professional mental health follow-up and continue regular check-ins."  # Return structured clinical follow-up recommendation
     return "Your responses are currently in a lower-severity range. Keep practicing daily self-care and repeat this check-in if symptoms increase."  # Return lower-risk self-monitoring recommendation
 
-def _build_crisis_support(crisis_detection_flag: bool) -> PHQ9CrisisSupport | None:  # Build structured crisis resources when PHQ-9 item 9 signals risk
-    if not crisis_detection_flag:  # Check whether the assessment needs crisis support
-        return None  # Return no crisis object when the assessment did not trigger risk
 
-    return PHQ9CrisisSupport(  # Return a structured safety payload the frontend can display immediately
-        crisis_detected=True,  # Mark that normal assessment/report flow should pause
-        message="Your answer suggests possible self-harm risk. Please contact emergency services or a crisis helpline now, and reach out to someone you trust.",  # Provide safety-first wording
-        resources=[  # Provide India-focused resources from the project specification
-            CrisisResource(name="iCall India", contact="9152987821", region="India"),  # Add iCall India helpline details
-            CrisisResource(name="Vandrevala Foundation", contact="1860-2662-345", region="India"),  # Add Vandrevala Foundation helpline details
-            CrisisResource(name="Local emergency services", contact="Contact your local emergency number immediately if you are in immediate danger", region="Local"),  # Add emergency escalation guidance
-        ],  # Finish crisis resource list
-    )  # Finish crisis support object creation
 
 async def score_phq9_assessment(request_data:PHQ9AssessmentRequest)-> PHQ9AssessmentResult:
     total_score = sum(x.score for x in request_data.answers)
     severity = _determine_phq9_severity(total_score=total_score)
     needs_follow,crisis_detection_flag = _evaluate_follow_up_flags(request_data,total_score)
     recommendation = _build_recommendation_message(severity,crisis_detection_flag,needs_follow)
-    crisis_support = _build_crisis_support(crisis_detection_flag)
+    crisis_support = build_crisis_support(crisis_detection_flag)
     return PHQ9AssessmentResult(
         total_score=total_score,
         severity=severity,

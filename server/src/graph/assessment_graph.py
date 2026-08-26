@@ -6,7 +6,9 @@ Importing the necessary modules
 from langgraph.graph import START,END,StateGraph # Build the Graph
 from typing import List,Optional,Any,TypedDict,Literal  # To define Graph Schema
 from src.schemas.assessment import PHQ9AssessmentRequest
+from src.services.crisis_service import build_crisis_support
 from src.services.assessment_service import score_phq9_assessment
+from src.services.crisis_service import check_for_crisis
 """
 #####################################################################################################
 This is a simple lookup table. The frontend will show info from this tool dicts
@@ -102,6 +104,18 @@ def record_answer(state: PHQ9ConversationState) -> PHQ9ConversationState:
     answers.append({"question_id": question_id, "score": incoming_score})
     return {"answers": answers, "Error": None}
 
+def check_crisis(state: PHQ9ConversationState) -> PHQ9ConversationState:
+
+    notes = state.get("notes")
+
+    if notes is not None:
+        crisis_result = check_for_crisis(notes.lower())
+
+        if crisis_result.crisis_detected:
+            crisis : dict[str, Any] = build_crisis_support(crisis_result.crisis_detected)
+            return {"crisis_support": crisis,"is_complete": True, "needs_answer": False}
+
+    return state
 
 """
 _____________________________________________________________________________________________________

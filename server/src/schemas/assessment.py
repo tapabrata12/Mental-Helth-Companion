@@ -13,6 +13,8 @@ PHQ9Severity = Literal["minimal", "mild", "moderate", "moderately_severe", "seve
 This part is where we make the crisis support part where we define the crisis center info
 #####################################################################################################
 """
+
+# I need this as it checks if the crisis detected by the hardcoded layer or not and if yes then what will be the matched phases.
 class CrisisDetectionResult(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     crisis_detected: bool = Field(..., description="Whether any crisis phrase was found in the text")
