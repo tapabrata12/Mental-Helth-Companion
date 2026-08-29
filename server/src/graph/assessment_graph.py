@@ -105,25 +105,34 @@ def record_answer(state: PHQ9ConversationState) -> PHQ9ConversationState:
     return {"answers": answers, "Error": None}
 
 def check_crisis(state: PHQ9ConversationState) -> PHQ9ConversationState:
-
     notes = state.get("notes")
 
     if notes is not None:
         crisis_result = check_for_crisis(notes.lower())
 
         if crisis_result.crisis_detected:
-            crisis : dict[str, Any] = build_crisis_support(crisis_result.crisis_detected)
-            return {"crisis_support": crisis,"is_complete": True, "needs_answer": False}
+            crisis_support_obj = build_crisis_support(crisis_result.crisis_detected)
+            return {
+                "assistant_message": "We've paused this assessment because of some concerning responses. Please see the support resources below.",
+                "crisis_support": crisis_support_obj.model_dump(),
+                "is_complete": True,
+                "needs_answer": False,
+            }
 
-    return state
+    return {"crisis_support": None}
 
 """
 _____________________________________________________________________________________________________
 This is not a node this is a conditional function which deside in which node the control goes next
 _____________________________________________________________________________________________________
 """
-def route_after_answer(state: PHQ9ConversationState)-> Literal["score_assessment", "ask_question"]:
+def route_after_answer(state: PHQ9ConversationState) -> Literal["ask_question", "score_assessment"]:
     answers = state.get("answers", [])
+    crisis_result = state.get("crisis_support")
+
+    if crisis_result and crisis_result.get("crisis_detected"):
+        return END
+
     if len(answers) >= 9:
         return "score_assessment"
 
@@ -166,19 +175,18 @@ async def score_assessment(state: PHQ9ConversationState)-> PHQ9ConversationState
         "Error": None,
     }
 
-def build_phq9_conversation_graph():
-    builder = StateGraph(PHQ9ConversationState)
-
-    builder.add_node("record_answer", record_answer)
-    builder.add_node("ask_question", ask_question)
-    builder.add_node("score_assessment", score_assessment)
-
-    builder.add_edge(START, "record_answer")
-    builder.add_conditional_edges("record_answer", route_after_answer)
-    builder.add_edge("ask_question", END)
-    builder.add_edge("score_assessment", END)
-
-    return builder.compile()
+def build_phq9_conversation_graph():  # Create a function that builds the graph once.
+    builder = StateGraph(PHQ9ConversationState)  # Create a LangGraph state machine using our state shape.
+    builder.add_node("record_answer", record_answer)  # Add the node that stores the latest user answer.
+    builder.add_node("check_crisis", check_crisis) # Add the node that checks the crisis.
+    builder.add_node("ask_question", ask_question)  # Add the node that returns the next PHQ-9 question.
+    builder.add_node("score_assessment", score_assessment)  # Add the node that scores the completed PHQ-9.
+    builder.add_edge(START, "record_answer")  # Tell LangGraph to start by recording any submitted answer.
+    builder.add_edge("record_answer","check_crisis")
+    builder.add_conditional_edges("check_crisis", route_after_answer)  # Route either to next question or scoring.
+    builder.add_edge("ask_question", END)  # Stop after asking one question so the frontend can answer.
+    builder.add_edge("score_assessment", END)  # Stop after scoring so the frontend can show the result.
+    return builder.compile()  # Compile the graph before using it.
 
 graph = build_phq9_conversation_graph()
 
