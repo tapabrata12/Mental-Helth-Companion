@@ -31,6 +31,8 @@ class Settings(BaseSettings):  # Define strongly validated application settings 
     OLLAMA_EMBEDDING_MODEL: str = Field(..., description="Ollama embedding model")
     OLLAMA_BASE_URL: str = Field(..., min_length=1, description="Base URL for OLLAMA API")
     NVIDIA_API_KEY: str = Field(..., min_length=1, description="NVIDIA API key")
+    GEMINI_API_KEY: str = Field(..., min_length=1, description="GEMINI API key")
+    GEMINI_MODEL: str = Field(..., min_length=1, description="GEMINI model")
     NVIDIA_EMBEDDING_MODEL: str = Field(..., min_length=1, description="NVIDIA embedding model")
 
     @field_validator("PREFIX")  # Attach validator to API prefix field
