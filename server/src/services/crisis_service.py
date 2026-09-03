@@ -107,24 +107,22 @@ async def check_for_crisis_semantic(text: str, max_try: int = 3, initial_delay: 
 Signature: String                                                                                               Return: Pydantic Base Model
 ###################################################################################################################################################
 """
-async def check_for_crisis(text: str) -> CrisisDetectionResult | SemanticCrisisResult:
-    """Keyword pattern matching backup for fast fallback verification."""
+def check_for_crisis(text: str) -> CrisisDetectionResult:
     text_lower = text.lower()
     matched: list[str] = []
+    for phrase in CRISIS_PHRASES:
+        if phrase.lower() in text_lower:
+            matched.append(phrase)
+    return CrisisDetectionResult(crisis_detected=bool(matched), matched_phrases=matched)
 
-    for i in CRISIS_PHRASES:
-        if i.lower() in text_lower:
-            matched.append(i)
+async def check_for_crisis_combined(text: str) -> CrisisDetectionResult:
+    keyword_result = check_for_crisis(text)
+    semantic_result = await check_for_crisis_semantic(text)
 
-    semantic_crisis_result = await check_for_crisis_semantic(text=text)
-    crisis_detected = True if matched or semantic_crisis_result.crisis_detected else False
-    if not matched:
-        return SemanticCrisisResult(crisis_detected = crisis_detected, reason = semantic_crisis_result.reason)
-    return CrisisDetectionResult(crisis_detected=crisis_detected, matched_phrases=matched)
+    crisis_detected = keyword_result.crisis_detected or semantic_result.crisis_detected
 
+    return CrisisDetectionResult(
+        crisis_detected=crisis_detected,
+        matched_phrases=keyword_result.matched_phrases,
+    )
 
-
-# if __name__ == "__main__":
-#     # test_result = asyncio.run(check_for_crisis_semantic("Hello how are you?"))
-#     test_result = asyncio.run(check_for_crisis("Don't know why it fells that is life has no meaning"))
-#     print(test_result)
