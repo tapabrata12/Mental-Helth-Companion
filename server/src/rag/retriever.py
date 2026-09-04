@@ -17,6 +17,8 @@ async def retrieve_context(text:str, limit: int = 4) -> list[dict]:
 
     retrieved_query: list[dict] = []
     for doc, meta, dis in zip(documents,metadatas,distances):
+        if len(doc.strip()) < 100:  # skip short/junk fragments like titles, headers
+            continue
         retrieved_query.append({
         "text": doc,
         "source_document": meta["source_document"],
