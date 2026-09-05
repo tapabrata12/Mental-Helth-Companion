@@ -5,7 +5,7 @@ from src.core.config import settings
 # OllamaEmbeddings talks to a locally running Ollama server to generate embeddings
 from langchain_ollama import OllamaEmbeddings
 # NVIDIAEmbeddings talks to NVIDIA's hosted embedding API as a fallback option
-from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings
+from langchain_huggingface import HuggingFaceEndpointEmbeddings
 
 
 def check_text(text: str) -> str:
@@ -18,17 +18,6 @@ def check_text(text: str) -> str:
         raise ValueError("text must be a string")
 
 
-async def _get_nvidia_embeddings(texts: list[str]) -> list[list[float | int]]:
-    # Create an NVIDIA embeddings client using our configured model + API key
-    client = NVIDIAEmbeddings(
-        model=settings.NVIDIA_EMBEDDING_MODEL,   # which NVIDIA model to use, from settings
-        api_key=settings.NVIDIA_API_KEY,          # secret key required to call NVIDIA's API
-        truncate="NONE",                          # don't silently cut off long text — fail loudly instead
-    )
-    # embed_documents() sends all texts in one batch call and returns one vector per text
-    return await client.aembed_documents(texts)
-
-
 async def _get_ollama_embeddings(texts: list[str]) -> list[list[float | int]]:
     # Create an Ollama embeddings client pointing at your local Ollama server
     client = OllamaEmbeddings(
@@ -37,6 +26,13 @@ async def _get_ollama_embeddings(texts: list[str]) -> list[list[float | int]]:
     )
     # embed_documents() sends all texts and returns one vector per text
     return await client.aembed_documents(texts)
+
+async def _get_huggingface_embeddings(texts: list[str]) -> list[list[float | int]]:
+    embeddings = HuggingFaceEndpointEmbeddings(
+        model="Qwen/Qwen3-Embedding-8B",
+        huggingfacehub_api_token=settings.HUGGING_FACE_API_KEY
+    )
+    return await embeddings.aembed_documents(texts)
 
 
 #####################################################################################################
@@ -58,10 +54,11 @@ async def embed_texts(texts: list[str]) -> list[list[float | int]]:
         docs.append(check_text(text))  # check_text() strips whitespace and rejects bad input
 
     # Route to the correct provider based on what's configured in .env
-    if settings.EMBEDDING_PROVIDER == "nvidia":
-        vectors = await _get_nvidia_embeddings(docs)   # call NVIDIA's hosted API
-    elif settings.EMBEDDING_PROVIDER == "ollama":
+    if settings.EMBEDDING_PROVIDER == "ollama":
         vectors = await _get_ollama_embeddings(docs)   # call your local Ollama server
+
+    elif settings.EMBEDDING_PROVIDER == "huggingface":
+        vectors = await _get_huggingface_embeddings(docs)
     else:
         # This should be unreachable now thanks to the config.py validator,
         # but we keep this check as a safety net in case settings are ever bypassed

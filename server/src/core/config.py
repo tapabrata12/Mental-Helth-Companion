@@ -2,14 +2,15 @@
 
 from pathlib import Path  # Import Path for stable env file resolution
 
-from pydantic import Field, field_validator  # Import Pydantic field tools and validators
+from typing import Literal, Optional
+
+from pydantic import Field, field_validator, model_validator  # Import Pydantic field tools and validators
 from pydantic_settings import BaseSettings, SettingsConfigDict  # Import BaseSettings for env-driven config in Pydantic v2
-from typing import Literal
 
 
 BASE_DIR = Path(__file__).resolve().parents[2]  # Resolve project root from src/core/config.py
 ENV_FILE = BASE_DIR / ".env"  # Point settings loading at Server/.env regardless of current working directory
-choice = Literal['ollama', 'nvidia']
+choice = Literal['ollama', 'huggingface']
 
 
 class Settings(BaseSettings):  # Define strongly validated application settings model
@@ -28,12 +29,13 @@ class Settings(BaseSettings):  # Define strongly validated application settings 
     REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, ge=1, le=90, description="Refresh token expiry in days")  # Set bounded refresh token lifetime
     KNOWLEDGE_DIR: str = Field(..., min_length=1, description="Knowledge data directory")
     EMBEDDING_PROVIDER: choice = Field(..., min_length=6, description="Embedding provider")
-    OLLAMA_EMBEDDING_MODEL: str = Field(..., description="Ollama embedding model")
-    OLLAMA_BASE_URL: str = Field(..., min_length=1, description="Base URL for OLLAMA API")
-    NVIDIA_API_KEY: str = Field(..., min_length=1, description="NVIDIA API key")
+    OLLAMA_EMBEDDING_MODEL: Optional[str] = Field(default=None, description="Ollama embedding model")
+    OLLAMA_BASE_URL: Optional[str] = Field(default=None, min_length=1, description="Base URL for OLLAMA API")
+    NVIDIA_API_KEY: Optional[str] = Field(default=None, min_length=1, description="NVIDIA API key")
     GEMINI_API_KEY: str = Field(..., min_length=1, description="GEMINI API key")
     GEMINI_MODEL: str = Field(..., min_length=1, description="GEMINI model")
-    NVIDIA_EMBEDDING_MODEL: str = Field(..., min_length=1, description="NVIDIA embedding model")
+    HUGGING_FACE_API_KEY: str = Field(..., min_length=1, description="Hugging face API key")
+    HUGGING_FACE_EMBEDDING_MODEL: str = Field(..., min_length=1, description="Hugging face embedding model")
 
     @field_validator("PREFIX")  # Attach validator to API prefix field
     @classmethod  # Mark validator as class-level in Pydantic v2 style
@@ -57,11 +59,39 @@ class Settings(BaseSettings):  # Define strongly validated application settings 
     @field_validator("EMBEDDING_PROVIDER")  # Attach validator to embedding provider field
     @classmethod  # Mark validator as class-level in Pydantic v2 style
     def validate_embedding_provider(cls, value: str) -> str:  # Enforce allowed provider values
-        allowed = {"ollama", "nvidia"}  # Define the only two valid provider strings
+        allowed = {"ollama", "huggingface"}  # Define the supported provider strings
         normalized = value.strip().lower()  # Normalize whitespace and case
         if normalized not in allowed:  # Check the value is one of our two supported providers
             raise ValueError(f"EMBEDDING_PROVIDER must be one of {sorted(allowed)}")  # Raise clear error early
         return normalized  # Return the clean, validated value
+
+    @model_validator(mode="after")
+    def validate_provider_specific_settings(self):
+        if self.EMBEDDING_PROVIDER == "ollama":
+            missing = [
+                name
+                for name, value in {
+                    "OLLAMA_EMBEDDING_MODEL": self.OLLAMA_EMBEDDING_MODEL,
+                    "OLLAMA_BASE_URL": self.OLLAMA_BASE_URL,
+                }.items()
+                if not value
+            ]
+            if missing:
+                raise ValueError(f"Missing required Ollama settings: {', '.join(missing)}")
+
+        if self.EMBEDDING_PROVIDER == "huggingface":
+            missing = [
+                name
+                for name, value in {
+                    "HUGGING_FACE_API_KEY": self.HUGGING_FACE_API_KEY,
+                    "HUGGING_FACE_EMBEDDING_MODEL": self.HUGGING_FACE_EMBEDDING_MODEL,
+                }.items()
+                if not value
+            ]
+            if missing:
+                raise ValueError(f"Missing required Hugging Face settings: {', '.join(missing)}")
+
+        return self
 
 
 settings = Settings()  # Create singleton settings instance to import across the app

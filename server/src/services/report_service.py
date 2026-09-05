@@ -11,7 +11,7 @@ SEVERITY_SEARCH_QUERIES: dict[str, str] = {
 
 async def generate_phq9_report(result: PHQ9AssessmentResult):
     query = SEVERITY_SEARCH_QUERIES[result.severity]
-    chunks = await retrieve_context(query, limit=4)
+    chunks = await retrieve_context(query, limit=10)
     return chunks
 
 # Dummy code for test
