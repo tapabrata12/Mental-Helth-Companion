@@ -32,6 +32,7 @@ class Settings(BaseSettings):  # Define strongly validated application settings 
     OLLAMA_EMBEDDING_MODEL: Optional[str] = Field(default=None, description="Ollama embedding model")
     OLLAMA_BASE_URL: Optional[str] = Field(default=None, min_length=1, description="Base URL for OLLAMA API")
     NVIDIA_API_KEY: Optional[str] = Field(default=None, min_length=1, description="NVIDIA API key")
+    NVIDIA_CHAT_MODEL: str = Field(..., min_length=1, description="Nvidia chat model")
     GEMINI_API_KEY: str = Field(..., min_length=1, description="GEMINI API key")
     GEMINI_MODEL: str = Field(..., min_length=1, description="GEMINI model")
     HUGGING_FACE_API_KEY: str = Field(..., min_length=1, description="Hugging face API key")
