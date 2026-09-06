@@ -1,7 +1,7 @@
 import asyncio
 from src.schemas.assessment import PHQ9AssessmentResult
 from src.services.report_service import generate_phq9_report
-
+from pprint import pprint
 fake_result = PHQ9AssessmentResult(
     total_score=14,
     severity="moderate",
@@ -11,4 +11,4 @@ fake_result = PHQ9AssessmentResult(
 )
 
 output = asyncio.run(generate_phq9_report(fake_result))
-print(output)
+pprint(output)
