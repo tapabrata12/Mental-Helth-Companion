@@ -1,8 +1,6 @@
-from typing import Any, Sequence
-
-from langchain_core.prompt_values import PromptValue
+from typing import Any
 from langchain_core.runnables import  RunnableSerializable
-
+from pydantic import BaseModel
 from src.schemas.assessment import PHQ9ReportResult, PHQ9AssessmentResult
 from src.rag.retriever import retrieve_context
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
@@ -25,12 +23,7 @@ def _format_context(chunks: list[dict]) -> str:
         formatted_string += f"Source document: {source}\n Important Text: \"{text}\"\n\n"
     return formatted_string
 
-async def generate_phq9_report(result: PHQ9AssessmentResult):
-    query = SEVERITY_SEARCH_QUERIES[result.severity]
-    chunks = await retrieve_context(query, limit=10)
-    return chunks
-
-async def _get_report_llm() -> RunnableSerializable[PromptValue | str | Sequence[Any], PromptValue]:
+def _get_report_llm() -> RunnableSerializable[dict[str, Any], dict | BaseModel]:
     llm = ChatNVIDIA(
         model=settings.NVIDIA_CHAT_MODEL,
         api_key= settings.NVIDIA_API_KEY,
@@ -56,4 +49,18 @@ async def _get_report_llm() -> RunnableSerializable[PromptValue | str | Sequence
     ("human","PHQ-9 Severity: {severity}\nPHQ-9 Total Score: {total_score}\n\nRelevant source material:\n{context}")
     ])
 
-    return structured_llm | report_prompt_template
+    return report_prompt_template | structured_llm
+
+
+async def generate_phq9_report(result: PHQ9AssessmentResult):
+    query = SEVERITY_SEARCH_QUERIES[result.severity]
+    chunks = await retrieve_context(query, limit=10)
+    # Call the string context builder and other important credentials
+
+    llm_chain = _get_report_llm()
+    severity = result.severity
+    total_score = result.total_score
+    formatted_string = _format_context(chunks)
+
+    llm_result = await llm_chain.ainvoke({"severity": severity, "total_score": total_score, "context": formatted_string})
+    return llm_result
